@@ -254,7 +254,6 @@ class NMT(nn.Module):
         Y_ts = torch.split(Y, 1)
         for Y_t in Y_ts:
             Y_t = torch.squeeze(Y_t, 0)
-            assert(Y_t.shape[1] == self.embed_size)
             Ybar_t = torch.cat((Y_t, o_prev), -1)
             dec_state, o_t, _ = self.step(Ybar_t, dec_state, enc_hiddens, enc_hiddens_proj, enc_masks)
             combined_outputs.append(o_t)
