@@ -356,7 +356,7 @@ class NMT(nn.Module):
         ###         https://pytorch.org/docs/stable/torch.html#torch.cat
         ###     Tanh:
         ###         https://pytorch.org/docs/stable/torch.html#torch.tanh
-        alpha_t = nn.functional.softmax(e_t, 0)
+        alpha_t = nn.functional.softmax(e_t, 1)
         a_t = torch.bmm(torch.unsqueeze(alpha_t, 1), enc_hiddens)
         a_t = torch.squeeze(a_t, 1)
         U_t = torch.concat((dec_hidden, a_t), 1)
