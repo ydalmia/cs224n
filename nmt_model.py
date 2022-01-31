@@ -178,8 +178,8 @@ class NMT(nn.Module):
         enc_hiddens, (last_hidden, last_cell) = self.encoder(X)
         enc_hiddens, _ = nn.utils.rnn.pad_packed_sequence(enc_hiddens)
         enc_hiddens = torch.permute(enc_hiddens, (1, 0, 2))
-        init_decoder_hidden = self.h_projection(torch.cat((last_hidden[1], last_hidden[0]), 1))
-        init_decoder_cell = self.c_projection(torch.cat((last_cell[1], last_cell[0]), 1))
+        init_decoder_hidden = self.h_projection(torch.cat((last_hidden[0], last_hidden[1]), 1))
+        init_decoder_cell = self.c_projection(torch.cat((last_cell[0], last_cell[1]), 1))
         dec_init_state = (init_decoder_hidden, init_decoder_cell)
         ### END YOUR CODE
 
@@ -254,7 +254,8 @@ class NMT(nn.Module):
         Y_ts = torch.split(Y, 1)
         for Y_t in Y_ts:
             Y_t = torch.squeeze(Y_t, 0)
-            Ybar_t = torch.cat((Y_t, o_prev), 1)
+            assert(Y_t.shape[1] == self.embed_size)
+            Ybar_t = torch.cat((Y_t, o_prev), -1)
             dec_state, o_t, _ = self.step(Ybar_t, dec_state, enc_hiddens, enc_hiddens_proj, enc_masks)
             combined_outputs.append(o_t)
             o_prev = o_t
@@ -317,7 +318,8 @@ class NMT(nn.Module):
         ###     Tensor Squeeze:
         ###         https://pytorch.org/docs/stable/torch.html#torch.squeeze
 
-        (dec_hidden, dec_cell) = dec_state = self.decoder(Ybar_t, dec_state) 
+        dec_state = self.decoder(Ybar_t, dec_state) 
+        (dec_hidden, dec_cell) = dec_state
         e_t = torch.bmm(enc_hiddens_proj, torch.unsqueeze(dec_hidden, 2))
         e_t = torch.squeeze(e_t, 2)
 
@@ -354,7 +356,7 @@ class NMT(nn.Module):
         ###         https://pytorch.org/docs/stable/torch.html#torch.cat
         ###     Tanh:
         ###         https://pytorch.org/docs/stable/torch.html#torch.tanh
-        alpha_t = nn.functional.softmax(e_t, 1)
+        alpha_t = nn.functional.softmax(e_t, 0)
         a_t = torch.bmm(torch.unsqueeze(alpha_t, 1), enc_hiddens)
         a_t = torch.squeeze(a_t, 1)
         U_t = torch.concat((dec_hidden, a_t), 1)
